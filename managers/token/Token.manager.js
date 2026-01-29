@@ -8,9 +8,8 @@ module.exports = class TokenManager {
     constructor({config}){
         this.config              = config;
         this.longTokenExpiresIn  = '3y';
-        this.shortTokenExpiresIn = '1y';
+        this.shortTokenExpiresIn = '1d';
 
-        this.httpExposed         = ['v1_createShortToken'];
     }
 
     /** 
@@ -36,9 +35,9 @@ module.exports = class TokenManager {
         })
     }
 
-    genShortToken({userId, userKey, sessionId, deviceId}){
+    genJwt({userId, userRole}){
         return jwt.sign(
-            { userKey, userId, sessionId, deviceId}, 
+            { userId, userRole}, 
             this.config.dotEnv.SHORT_TOKEN_SECRET, 
             {expiresIn: this.shortTokenExpiresIn
         })
