@@ -72,8 +72,7 @@ module.exports = class School {
         return errorHandlers.validationError(validation);
       }
 
-      const userId = __authenticate.id;
-      console.log("Creating school by user:", validation.data, userId);
+      const userId = __authenticate.userId;
       const schoolData = {
         ...validation.data,
         createdBy: userId,
@@ -114,11 +113,14 @@ module.exports = class School {
       const page = parseInt(__query.page) || 1;
       const size = parseInt(__query.size) || 10;
       const skip = (page - 1) * size;
-      const status = __query.status || "ACTIVE";
+      const status = __query.status;
       const search = __query.search || "";
 
       // Build query filter
-      const filter = { status };
+      const filter = {};
+      if (status) {
+        filter.status = status;
+      }
 
       // Add search filter if search query is provided
       if (search) {
@@ -178,7 +180,7 @@ module.exports = class School {
         return errorHandlers.badRequestError("School ID is required");
       }
 
-      const school = await this.School.findById(schoolId);
+      const school = await this.getSchoolById(schoolId);
 
       if (!school) {
         return errorHandlers.notFoundError("School not found");
@@ -292,7 +294,7 @@ module.exports = class School {
         return errorHandlers.badRequestError("School ID is required");
       }
 
-      const school = await this.School.findById(schoolId);
+      const school = await this.getSchoolById(schoolId);
 
       if (!school) {
         return errorHandlers.notFoundError("School not found");
@@ -312,5 +314,22 @@ module.exports = class School {
         `Failed to toggle school status: ${error.message}`,
       );
     }
+  }
+
+  /**
+   * Helper method: Get school by ID
+   * @param {string} schoolId - School ID
+   * @returns {Object|null} School object or null if not found
+   */
+  async getSchoolById(schoolId) {
+    let school = null;
+
+    if (!schoolId) {
+      console.error("School ID is required to fetch school");
+      return null;
+    }
+
+    school = await this.School.findById(schoolId);
+    return school;
   }
 };

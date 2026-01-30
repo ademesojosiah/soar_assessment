@@ -1,5 +1,6 @@
 const errorHandlers = require("../../_common/errorHandlers");
 const successHandlers = require("../../_common/successHandlers");
+const bcrypt = require("bcrypt");
 
 module.exports = class User { 
 
@@ -149,10 +150,11 @@ module.exports = class User {
                 return errorHandlers.conflictError('Email already in use');
             }
             
+             const passwordHash = await bcrypt.hash(password, 10);
 
             const user = await this.User.create({
                 email,
-                passwordHash: password, // Will be hashed by pre-save hook
+                passwordHash,
                 role: 'SCHOOL_ADMIN',
                 schoolId
             });
@@ -162,5 +164,23 @@ module.exports = class User {
             return errorHandlers.serverError(error);
         }
     }
+
+
+
+    /**
+     * Find user by email
+     * @param {string} userId - User ID
+     * @returns {Object} User object
+     */
+      async getUserById(userId) {
+            let user = null;
+            if (!userId) {
+                console.error('User ID is required to fetch user');
+                return null;
+            }
+
+            user = await this.User.findById(userId);
+            return user;
+      }
 
 }
