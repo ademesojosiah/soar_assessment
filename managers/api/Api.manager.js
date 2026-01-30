@@ -31,7 +31,6 @@ module.exports = class ApiHandler {
         // console.log(`# Http API`);
         Object.keys(this.managers).forEach(mk=>{
             if(this.managers[mk][this.prop]){
-                // console.log('managers - mk ', this.managers[mk])
                 this.methodMatrix[mk]={};
                 console.log(`## ${mk}`);
                 this.managers[mk][this.prop].forEach(i=>{
@@ -73,7 +72,7 @@ module.exports = class ApiHandler {
                         }
                     })
                     
-                    console.log(`* ${i} :`, 'args =', params);
+                    console.log(`   * ${method.toUpperCase().padEnd(6)} /api/${mk}/${fnName}`);
 
                     // Build auth config for role-based authorization
                     const roleConfig = this.managers[mk].roles?.[fnName];
@@ -133,7 +132,6 @@ module.exports = class ApiHandler {
             return this.managers.responseDispatcher.dispatch(res, {ok: false, message: `unsupported method ${method} for ${moduleName}`});
         }
 
-        console.log(moduleMatrix[method]);
 
         if(!moduleMatrix[method].includes(fnName)){
             return this.managers.responseDispatcher.dispatch(res, {ok: false, message: `unable to find function ${fnName} with method ${method}`});

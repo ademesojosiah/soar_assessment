@@ -12,6 +12,7 @@ const User                  = require('../managers/entities/user/User.manager');
 const VirtualStack          = require('../managers/virtual_stack/VirtualStack.manager');
 const Seed = require('../managers/seed/Seed.manager');
 const TokenManager = require('../managers/token/Token.manager');
+const School = require('../managers/entities/school/School.manager');
 
 /** 
  * load sharable modules 
@@ -59,7 +60,7 @@ module.exports = class ManagersLoader {
         /** Cusom Managers */
         this.managers.token                 = new TokenManager(this.injectable);
         this.managers.user                  = new User(this.injectable);
-        
+        this.managers.school                = new School(this.injectable);
 
 
         this.managers.seed                  = new Seed(this.injectable);

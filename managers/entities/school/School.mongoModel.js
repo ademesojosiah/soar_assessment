@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 /**
@@ -6,42 +6,50 @@ const Schema = mongoose.Schema;
  * Represents a school entity - the primary tenant in a multi-tenant system
  * Only managed by SUPER_ADMIN role
  */
-const SchoolSchema = new Schema({
+const SchoolSchema = new Schema(
+  {
     name: {
-        type: String,
-        required: true,
-        trim: true,
-        index: true
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
     },
     email: {
-        type: String,
-        required: true,
-        lowercase: true,
-        unique: true
+      type: String,
+      required: true,
+      lowercase: true,
+      unique: true,
     },
     phone: String,
     address: String,
     city: String,
     state: String,
-    zipCode: String,
+    country: String,
     status: {
-        type: String,
-        enum: ['ACTIVE', 'INACTIVE'],
-        default: 'ACTIVE',
-        index: true
+      type: String,
+      enum: ["ACTIVE", "INACTIVE"],
+      default: "ACTIVE",
+      index: true,
     },
     createdBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     updatedBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'User'
-    }
-}, { 
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  },
+  {
     timestamps: true,
-    collection: 'schools'
+    collection: "schools",
+  },
+);
+
+// Virtual: Map _id to id
+SchoolSchema.virtual("id").get(function () {
+  return this._id.toString();
 });
 
-module.exports = mongoose.model('School', SchoolSchema);
+module.exports = mongoose.model("School", SchoolSchema);
