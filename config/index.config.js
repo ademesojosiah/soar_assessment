@@ -20,6 +20,8 @@ const CACHE_PREFIX                     = process.env.CACHE_PREFIX || `${SERVICE_
 const MONGO_URI                        = process.env.MONGO_URI
 const LONG_TOKEN_SECRET                = process.env.LONG_TOKEN_SECRET || null;
 const SHORT_TOKEN_SECRET               = process.env.SHORT_TOKEN_SECRET || null;
+const SUPER_ADMIN_PASSWORD             = process.env.SUPER_ADMIN_PASSWORD || null;
+const SUPER_ADMIN_EMAIL                = process.env.SUPER_ADMIN_EMAIL || null;
 
 const config                           = require(`./envs/${ENV}.js`);
 if(!LONG_TOKEN_SECRET || !SHORT_TOKEN_SECRET) throw Error('missing .env variables check index.config');
@@ -41,6 +43,8 @@ config.dotEnv = {
     ADMIN_URL,
     LONG_TOKEN_SECRET,
     SHORT_TOKEN_SECRET,
+    SUPER_ADMIN_PASSWORD,
+    SUPER_ADMIN_EMAIL,
 };
 
 

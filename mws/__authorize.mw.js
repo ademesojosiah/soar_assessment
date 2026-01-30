@@ -10,6 +10,7 @@
  */
 module.exports = ({ meta, config, managers }) => {
   return ({ req, res, next, results }) => {
+
     // Get required roles from request (set by Api.manager)
     const requiredRoles = req.requiredRoles;
 
@@ -21,7 +22,7 @@ module.exports = ({ meta, config, managers }) => {
     }
 
     // Get user info from previous middleware or req.user
-    const userFromAuth = results.__authenticate;
+    const userFromAuth = results.__authenticate; 
     const userRole = userFromAuth?.role || req.user?.role;
 
     // Check if user is authenticated

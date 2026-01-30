@@ -29,34 +29,30 @@ const UserSchema = new Schema(
   { timestamps: true },
 );
 
-// Pre-save hook: Hash password if modified
-UserSchema.pre("save", async function (next) {
-  // Check if password field was modified
-  if (!this.isModified("passwordHash")) {
-    return next();
-  }
-
-  try {
-    // Hash the password with salt rounds
-    const salt = await bcrypt.genSalt(10);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
 
 /**
  * Method to compare password with hash
  * @param {string} candidatePassword - Plain text password to compare
  * @returns {Promise<boolean>} True if password matches, false otherwise
  */
-UserSchema.methods.comparePassword = async function (candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.passwordHash);
-  } catch (error) {
-    throw new Error(`Password comparison failed: ${error.message}`);
+
+
+UserSchema.methods.comparePassword = async function(candidatePassword) {
+  // Check if both arguments exist
+  if (!candidatePassword) {
+    throw new Error('Password is required for comparison');
   }
+  
+  if (!this.passwordHash) {
+    throw new Error('User password hash not found. Make sure to select password field.');
+  }
+  
+  return await bcrypt.compare(candidatePassword, this.passwordHash);
 };
+
+// Virtual: Map _id to id
+UserSchema.virtual("id").get(function () {
+  return this._id.toString();
+});
 
 module.exports = mongoose.model("User", UserSchema);

@@ -8,9 +8,10 @@ const MongoLoader           = require('./MongoLoader');
 const MiddlewaresLoader     = require('./MiddlewaresLoader');
 const ResourceMeshLoader    = require('./ResourceMeshLoader');
 
-const TokenManager          = require('../managers/entities/token/Token.manager');
 const User                  = require('../managers/entities/user/User.manager');
 const VirtualStack          = require('../managers/virtual_stack/VirtualStack.manager');
+const Seed = require('../managers/seed/Seed.manager');
+const TokenManager = require('../managers/token/Token.manager');
 
 /** 
  * load sharable modules 
@@ -59,6 +60,9 @@ module.exports = class ManagersLoader {
         this.managers.token                 = new TokenManager(this.injectable);
         this.managers.user                  = new User(this.injectable);
         
+
+
+        this.managers.seed                  = new Seed(this.injectable);
         /** Standered Managers */
         this.managers.responseDispatcher    = new ResponseDispatcher();
         this.managers.liveDb                = new LiveDB(this.injectable);
@@ -76,7 +80,7 @@ module.exports = class ManagersLoader {
         ]}, ...this.injectable});
 
         
-        this.managers.userApi               = new ApiHandler({...this.injectable,...{prop:'userExposed'}});
+        this.managers.userApi               = new ApiHandler({...this.injectable,...{prop:'httpExposed'}});
         this.managers.userServer            = new UserServer({ config: this.config, managers: this.managers });
 
         return this.managers;

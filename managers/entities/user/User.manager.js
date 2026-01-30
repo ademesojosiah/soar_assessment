@@ -1,31 +1,166 @@
+const errorHandlers = require("../../_common/errorHandlers");
+const successHandlers = require("../../_common/successHandlers");
+
 module.exports = class User { 
 
-    constructor({utils, cache, config, cortex, managers, validators, mongomodels }={}){
+    constructor({config, cortex, managers, validators, mongomodels }={}){
         this.config              = config;
         this.cortex              = cortex;
         this.validators          = validators; 
         this.mongomodels         = mongomodels;
+        this.User               = mongomodels.User;
         this.tokenManager        = managers.token;
+        this.responseDispatcher  = managers.responseDispatcher;
         this.usersCollection     = "users";
-        this.userExposed         = ['createUser'];
+        
+        // Http exposed methods
+        this.httpExposed         = [
+            'createSchoolAdmin',
+            'get=getSchoolAdmins',
+            'login'
+        ];
+        
+                // Role-based authorization
+
+        this.roles               = {
+            createSchoolAdmin: ['SUPER_ADMIN'],
+            getSchoolAdmins: ['SUPER_ADMIN']
+        };
     }
 
-    async createUser({username, email, password}){
-        const user = {username, email, password};
 
-        // Data validation
-        let result = await this.validators.user.createUser(user);
-        if(result) return result;
-        
-        // Creation Logic
-        let createdUser     = {username, email, password}
-        let longToken       = this.tokenManager.genLongToken({userId: createdUser._id, userKey: createdUser.key });
-        
-        // Response
-        return {
-            user: createdUser, 
-            longToken 
-        };
+
+    /**
+     * Get school admins for a specific school
+     * Only SUPER_ADMIN can access
+     * @param {string} schoolId - School ID
+     * @returns {Array} Array of school admin users
+     */
+    async getSchoolAdmins({__authenticate, __authorize, __params,id}) {
+        try {
+
+            const schoolId = __params.id;
+            if (!schoolId) {
+                return errorHandlers.badRequestError('schoolId is required');
+            }
+            const admins = await this.User.find({
+                role: 'SCHOOL_ADMIN',
+                schoolId
+            });
+
+            return successHandlers.success(admins, 'School admins retrieved successfully');
+        } catch (error) {
+            return errorHandlers.serverError(error);
+        }
+    }
+
+    /**
+     * Find user by email
+     * @param {string} email - User email
+     * @returns {Object} User object
+     */
+    async findByEmail(email) {
+        try {
+            if (!email) {
+                return errorHandlers.badRequestError('email is required');
+            }
+
+            const user = await this.User.findOne({ email });
+
+            if (!user) {
+                return errorHandlers.notFoundError('User not found');
+            }
+            
+            return user;
+
+        } catch (error) {
+            return errorHandlers.serverError(error);
+        }
+    }
+
+    /**
+     * User login - authenticate with email and password
+     * @param {string} email - User email
+     * @param {string} password - Plain text password
+     * @returns {Object} User and tokens if authentication succeeds
+     */
+    async login({ email, password }) {
+        try {
+
+            const validation = await this.validators.user.login({ email, password });
+            if (!validation.ok) {
+                return errorHandlers.validationError(validation);
+            }
+
+            // Find user by email
+            const user = await this.User.findOne({ email });
+            if (!user) {
+
+                return errorHandlers.unAuthorizedError('Invalid email or password');
+            }
+
+            // Compare password using model method
+            const isPasswordValid = await user.comparePassword(password);
+            if (!isPasswordValid) {
+                return errorHandlers.unAuthorizedError('Invalid email or password');
+            }
+
+            // Generate long token
+            const token = this.tokenManager.genJwt({
+                userId: user._id,
+                role: user.role,
+            });
+
+            const data = {id: user._id, email: user.email, role: user.role}
+
+            return successHandlers.success({ token, data }, 'Login successful');
+        } catch (error) {
+            return errorHandlers.serverError(error);
+        }
+    }
+
+
+    /**
+     * Create a school admin user with plain password
+     * Password will be automatically hashed by pre-save hook
+     * Only SUPER_ADMIN can create school admins
+     * @param {Object} payload
+     * @param {string} email - Admin email
+     * @param {string} password - Plain text password
+     * @param {string} schoolId - School ID
+     * @returns {Object} Created user
+     */
+    async createSchoolAdmin({__authenticate, __authorize, __params, email, password }) {
+        try {
+
+            const validation = await this.validators.user.createSchoolAdmin({email, password});
+            if (!validation.ok) {
+                return errorHandlers.validationError(validation);
+            }
+
+            const schoolId = __params.id;
+            if (!schoolId) {
+                return errorHandlers.badRequestError('schoolId is required');
+            }
+
+            // Check if user already exists
+            const existingUser = await this.User.findOne({ email });
+            if (existingUser) {
+                return errorHandlers.conflictError('Email already in use');
+            }
+            
+
+            const user = await this.User.create({
+                email,
+                passwordHash: password, // Will be hashed by pre-save hook
+                role: 'SCHOOL_ADMIN',
+                schoolId
+            });
+
+            return successHandlers.created(user, 'School admin created successfully');
+        } catch (error) {
+            return errorHandlers.serverError(error);
+        }
     }
 
 }

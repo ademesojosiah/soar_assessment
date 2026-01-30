@@ -75,6 +75,12 @@ module.exports = class ApiHandler {
                     
                     console.log(`* ${i} :`, 'args =', params);
 
+                    // Build auth config for role-based authorization
+                    const roleConfig = this.managers[mk].roles?.[fnName];
+                    if(roleConfig && roleConfig.length > 0) {
+                        this.auth[`${mk}.${fnName}`] = roleConfig;
+                    }
+
                 });
             }
         });
@@ -135,6 +141,12 @@ module.exports = class ApiHandler {
 
         let targetStack = this.mwsStack[`${moduleName}.${fnName}`];
 
+        // Inject __authorize middleware if role-based authorization is required
+        const requiredRoles = this.auth[`${moduleName}.${fnName}`];
+        if(requiredRoles) {
+            req.requiredRoles = requiredRoles;
+        }
+
         let hotBolt = this.mwsExec.createBolt({stack: targetStack, req, res, onDone: async ({req, res, results})=>{
 
             /** executed after all middleware finished */
@@ -150,14 +162,13 @@ module.exports = class ApiHandler {
             if(result.selfHandleResponse){
                 // do nothing if response handeled
             } else {
-                
             
                 if(result.errors){
-                    return this.managers.responseDispatcher.dispatch(res, {ok: false, errors: result.errors});
+                    return this.managers.responseDispatcher.dispatch(res, {code : result.code || 500,ok: false, errors: result.errors});
                 } else if(result.error){
-                    return this.managers.responseDispatcher.dispatch(res, {ok: false, message: result.error});
+                    return this.managers.responseDispatcher.dispatch(res, {code : result.code || 500,ok: false, message: result.error});
                 } else {
-                    return this.managers.responseDispatcher.dispatch(res, {ok:true, data: result});
+                    return this.managers.responseDispatcher.dispatch(res, {code : result.code || 200,ok:true, data: result});
                 }
             }
         }});

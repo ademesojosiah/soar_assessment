@@ -35,9 +35,9 @@ module.exports = class TokenManager {
         })
     }
 
-    genJwt({userId, userRole}){
+    genJwt({userId, role}){
         return jwt.sign(
-            { userId, userRole}, 
+            { userId, role}, 
             this.config.dotEnv.SHORT_TOKEN_SECRET, 
             {expiresIn: this.shortTokenExpiresIn
         })

@@ -38,7 +38,7 @@ module.exports = ({ meta, config, managers }) => {
 
       // Attach user info to request
       req.user = {
-        id: decoded.userId || decoded.id,
+        id: decoded.userId,
         role: decoded.role,
       };
 
