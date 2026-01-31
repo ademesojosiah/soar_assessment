@@ -650,7 +650,7 @@ module.exports = class Student {
         classroomName: enrollment.classroomId.name,
         capacity: enrollment.classroomId.capacity,
         resources: enrollment.classroomId.resources,
-        enrolledDate: enrollment.enrolledDate,
+        startDate: enrollment.startDate,
       };
 
       return successHandlers.success(
@@ -712,7 +712,7 @@ module.exports = class Student {
       const history = enrollments.map((enrollment) => ({
         classroomId: enrollment.classroomId._id,
         classroomName: enrollment.classroomId.name,
-        enrolledDate: enrollment.enrolledDate,
+        startDate: enrollment.startDate,
         endDate: enrollment.endDate || null,
         reason: enrollment.reason || "ACTIVE",
         isActive: enrollment.isActive,

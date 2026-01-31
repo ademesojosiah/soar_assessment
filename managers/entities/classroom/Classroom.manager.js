@@ -539,7 +539,7 @@ module.exports = class Classroom {
           firstName: sc.studentId.firstName,
           lastName: sc.studentId.lastName,
           email: sc.studentId.email,
-          enrolledDate: sc.enrolledDate,
+          startDate: sc.startDate,
           status: sc.isActive ? "ACTIVE" : "INACTIVE",
         })),
       };

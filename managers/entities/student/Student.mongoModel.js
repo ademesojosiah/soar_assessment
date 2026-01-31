@@ -33,6 +33,10 @@ const StudentSchema = new Schema(
       sparse: true,
     },
     phone: String,
+    address: {
+      type: String,
+      trim: true,
+    },
     dateOfBirth: Date,
     registrationNumber: {
       type: String,

@@ -1,6 +1,7 @@
 const http = require("http");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const app = express();
 
 module.exports = class UserServer {
@@ -17,6 +18,9 @@ module.exports = class UserServer {
 
   /** server configs */
   run() {
+    // Security middleware - Helmet with default config
+    app.use(helmet());
+
     app.use(cors({ origin: "*" }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));

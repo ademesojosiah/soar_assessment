@@ -88,25 +88,6 @@ module.exports = class StudentClassroom {
   }
 
   /**
-   * Helper method: Check if classroom has active students
-   * @param {string} classroomId - Classroom ID
-   * @returns {boolean} True if classroom has active students
-   */
-  async hasActiveStudents(classroomId) {
-    if (!classroomId) {
-      console.error("Classroom ID is required");
-      return false;
-    }
-
-    const count = await this.StudentClassroom.countDocuments({
-      classroomId,
-      isActive: true,
-    });
-
-    return count > 0;
-  }
-
-  /**
    * Helper method: Get all active students in a classroom
    * @param {string} classroomId - Classroom ID
    * @param {string} schoolId - School ID for verification
@@ -146,7 +127,7 @@ module.exports = class StudentClassroom {
       schoolId,
     })
       .populate("classroomId", "name")
-      .sort({ enrolledDate: -1 });
+      .sort({ startDate: -1 });
 
     return enrollments;
   }
@@ -196,6 +177,7 @@ module.exports = class StudentClassroom {
    * @access SCHOOL_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitCreate - Rate limiting for create endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @param {string} classroomId - Classroom ID to enroll student in (required)
@@ -204,7 +186,13 @@ module.exports = class StudentClassroom {
    * @throws {404} If student, classroom, or school not found
    * @throws {409} If student is already enrolled in the classroom
    */
-  async enrollStudent({ __authenticate, __authorize, __params, classroomId }) {
+  async enrollStudent({
+    __authenticate,
+    __authorize,
+    __rateLimitCreate,
+    __params,
+    classroomId,
+  }) {
     try {
       const studentId = __params.id;
       const userId = __authenticate.userId;
@@ -306,6 +294,7 @@ module.exports = class StudentClassroom {
   async transferStudent({
     __authenticate,
     __authorize,
+    __rateLimitGeneral,
     __params,
     newClassroomId,
   }) {
@@ -450,7 +439,12 @@ module.exports = class StudentClassroom {
    * @throws {400} If enrollment ID is missing
    * @throws {404} If enrollment not found, already ended, or school not found
    */
-  async endEnrollment({ __authenticate, __authorize, __params }) {
+  async endEnrollment({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const enrollmentId = __params.id;
       if (!enrollmentId) {
@@ -560,28 +554,9 @@ module.exports = class StudentClassroom {
       schoolId,
     })
       .populate("classroomId")
-      .sort({ enrolledDate: -1 });
+      .sort({ startDate: -1 });
 
     return history;
-  }
-
-  /**
-   * Helper method: Check if classroom has active students
-   * @param {string} classroomId - Classroom ID
-   * @returns {boolean} True if has active students, false otherwise
-   */
-  async hasActiveStudents(classroomId) {
-    if (!classroomId) {
-      console.error("Classroom ID is required");
-      return false;
-    }
-
-    const count = await this.StudentClassroom.countDocuments({
-      classroomId,
-      isActive: true,
-    });
-
-    return count > 0;
   }
 
   async graduateStudent(studentId, schoolId, session = null) {
