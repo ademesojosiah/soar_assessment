@@ -86,13 +86,16 @@ module.exports = class Student {
 
   /**
    * Helper method: Generate unique registration number
-   * Format: STU-YYYY-XXXXXX (e.g., STU-2026-000001)
+   * Format: STU-{SchoolCode}-YYYY-XXXXXX (e.g., STU-D8B-2026-000001)
+   * SchoolCode is derived from the last 4 characters of the schoolId for uniqueness
    * @param {string} schoolId - School ID for scoping the registration number
    * @returns {string} Unique registration number
    */
   async generateRegistrationNumber(schoolId) {
     const year = new Date().getFullYear();
-    const prefix = `STU-${year}-`;
+    // Use last 4 characters of schoolId (uppercase) as school code for uniqueness
+    const schoolCode = schoolId.toString().slice(-4).toUpperCase();
+    const prefix = `STU-${schoolCode}-${year}-`;
 
     // Find the last student with this prefix in this school
     const lastStudent = await this.Student.findOne({

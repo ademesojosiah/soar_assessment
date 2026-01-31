@@ -16,13 +16,13 @@ module.exports = {
     {
       path: 'phone',
       type: 'string',
-      required: false,
+      required: true,
       length: { min: 10, max: 15 }
     },
     {
       path: 'address',
       type: 'string',
-      required: false,
+      required: true,
       length: { min: 5, max: 300 }
     },
     {

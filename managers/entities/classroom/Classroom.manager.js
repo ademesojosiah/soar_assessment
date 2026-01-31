@@ -534,6 +534,7 @@ module.exports = class Classroom {
         classroomName: classroom.name,
         capacity: classroom.capacity,
         totalStudents: studentClassrooms.length,
+        resources: classroom.resources,
         students: studentClassrooms.map((sc) => ({
           studentId: sc.studentId._id,
           firstName: sc.studentId.firstName,

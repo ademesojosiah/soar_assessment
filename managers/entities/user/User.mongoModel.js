@@ -26,7 +26,26 @@ const UserSchema = new Schema(
       default: null,
     },
   },
-  { timestamps: true },
+  { timestamps: true ,
+    toJSON: {
+      transform: function(doc, ret) {
+        delete ret.passwordHash;  // ✅ Remove passwordHash when converting to JSON
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      }
+    },
+    toObject: {
+      transform: function(doc, ret) {
+        delete ret.passwordHash;  // ✅ Remove passwordHash when converting to Object
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      }
+    }
+  },
 );
 
 

@@ -27,7 +27,14 @@ module.exports = class User {
   /**
    * Get school admins for a specific school
    * Only SUPER_ADMIN can access
-   * @param {string} schoolId - School ID
+   *
+   * @route GET /api/user/getSchoolAdmins/:id
+   * @access SUPER_ADMIN only
+   * @param {Object} __authenticate - Authentication context
+   * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
+   * @param {Object} __params - URL parameters
+   * @param {string} __params.id - School ID
    * @returns {Array} Array of school admin users
    */
   async getSchoolAdmins({
@@ -81,10 +88,15 @@ module.exports = class User {
 
   /**
    * User login - authenticate with email and password
+   *
+   * @route POST /api/user/login
+   * @access Public
+   * @param {Object} __rateLimitAuth - Rate limiting for auth endpoints
    * @param {string} email - User email
    * @param {string} password - Plain text password
-   * @param {Object} __rateLimitAuth - Rate limiting for auth endpoints
    * @returns {Object} User and tokens if authentication succeeds
+   * @throws {400} If validation fails
+   * @throws {401} If invalid credentials
    */
   async login({ __rateLimitAuth, email, password }) {
     try {
@@ -123,13 +135,19 @@ module.exports = class User {
    * Create a school admin user with plain password
    * Password will be automatically hashed by pre-save hook
    * Only SUPER_ADMIN can create school admins
+   *
+   * @route POST /api/user/createSchoolAdmin/:id
+   * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
    * @param {Object} __rateLimitCreate - Rate limiting for create endpoints
    * @param {Object} __params - URL parameters
+   * @param {string} __params.id - School ID to assign admin to
    * @param {string} email - Admin email
-   * @param {string} password - Plain text password
+   * @param {string} password - Plain text password (min 8 chars)
    * @returns {Object} Created user
+   * @throws {400} If validation fails or schoolId missing
+   * @throws {409} If email already in use
    */
   async createSchoolAdmin({
     __authenticate,
