@@ -14,6 +14,8 @@ const Seed = require('../managers/seed/Seed.manager');
 const TokenManager = require('../managers/token/Token.manager');
 const School = require('../managers/entities/school/School.manager');
 const Classroom = require('../managers/entities/classroom/Classroom.manager');
+const Student = require('../managers/entities/student/Student.manager');
+const StudentClassroom = require('../managers/entities/student_classroom/StudentClassroom.manager');
 
 /** 
  * load sharable modules 
@@ -63,6 +65,8 @@ module.exports = class ManagersLoader {
         this.managers.user                  = new User(this.injectable);
         this.managers.school                = new School(this.injectable);
         this.managers.classroom             = new Classroom(this.injectable);
+        this.managers.student               = new Student(this.injectable);
+        this.managers.studentClassroom      = new StudentClassroom(this.injectable);
 
         this.managers.seed                  = new Seed(this.injectable);
         /** Standered Managers */
