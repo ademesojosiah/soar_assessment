@@ -43,6 +43,7 @@ module.exports = class Classroom {
    * @access SCHOOL_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitCreate - Rate limiting for create endpoints
    * @param {string} name - Classroom name (required)
    * @param {string} grade - Grade level (required)
    * @param {number} capacity - Maximum student capacity (required)
@@ -55,6 +56,7 @@ module.exports = class Classroom {
   async createClassroom({
     __authenticate,
     __authorize,
+    __rateLimitCreate,
     name,
     grade,
     capacity,
@@ -128,6 +130,7 @@ module.exports = class Classroom {
    * @access SCHOOL_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __query - Query parameters from URL
    * @param {number} __query.page - Page number (default: 1)
    * @param {number} __query.size - Items per page (default: 10)
@@ -136,7 +139,12 @@ module.exports = class Classroom {
    * @returns {Object} Object containing classrooms array and pagination metadata
    * @throws {404} If school not found for admin
    */
-  async getAllClassrooms({ __authenticate, __authorize, __query }) {
+  async getAllClassrooms({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __query,
+  }) {
     try {
       //get school of the admin
       const school = await this.getSchoolByAdminId(__authenticate);
@@ -210,6 +218,7 @@ module.exports = class Classroom {
   async getSchoolClassrooms({
     __authenticate,
     __authorize,
+    __rateLimitGeneral,
     __params,
     __query,
   }) {
@@ -279,7 +288,7 @@ module.exports = class Classroom {
    * @throws {400} If classroom ID is missing
    * @throws {404} If classroom not found
    */
-  async getById({ __authenticate, __authorize, __params }) {
+  async getById({ __authenticate, __authorize, __rateLimitGeneral, __params }) {
     try {
       const classroomId = __params.id;
 
@@ -329,6 +338,7 @@ module.exports = class Classroom {
   async updateClassroom({
     __authenticate,
     __authorize,
+    __rateLimitGeneral,
     __params,
     name,
     grade,
@@ -396,6 +406,7 @@ module.exports = class Classroom {
    * @access SCHOOL_ADMIN, SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Classroom MongoDB ObjectId
    * @returns {Object} Updated classroom object with ARCHIVED status
@@ -403,7 +414,12 @@ module.exports = class Classroom {
    * @throws {404} If classroom not found
    * @throws {409} If classroom is already archived or has active students
    */
-  async archiveClassroom({ __authenticate, __authorize, __params }) {
+  async archiveClassroom({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const classroomId = __params.id;
 
@@ -476,13 +492,19 @@ module.exports = class Classroom {
    * @access SCHOOL_ADMIN, SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Classroom MongoDB ObjectId
    * @returns {Object} Roster object with classroom details and students array
    * @throws {400} If classroom ID is missing
    * @throws {404} If classroom not found
    */
-  async getClassroomRoster({ __authenticate, __authorize, __params }) {
+  async getClassroomRoster({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const classroomId = __params.id;
 

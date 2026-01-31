@@ -29,12 +29,12 @@ module.exports = class Student {
       createStudent: ["SCHOOL_ADMIN"],
       getAllStudents: ["SCHOOL_ADMIN"],
       getSchoolStudents: ["SUPER_ADMIN"],
-      getById: ["SCHOOL_ADMIN","SUPER_ADMIN"],
-      updateStudent: ["SCHOOL_ADMIN","SUPER_ADMIN"],
-      graduateStudent: ["SCHOOL_ADMIN","SUPER_ADMIN"],
-      getCurrentStudentClassroom: ["SCHOOL_ADMIN","SUPER_ADMIN"],
-      getEnrollmentHistory: ["SCHOOL_ADMIN","SUPER_ADMIN"],
-    }
+      getById: ["SCHOOL_ADMIN", "SUPER_ADMIN"],
+      updateStudent: ["SCHOOL_ADMIN", "SUPER_ADMIN"],
+      graduateStudent: ["SCHOOL_ADMIN", "SUPER_ADMIN"],
+      getCurrentStudentClassroom: ["SCHOOL_ADMIN", "SUPER_ADMIN"],
+      getEnrollmentHistory: ["SCHOOL_ADMIN", "SUPER_ADMIN"],
+    };
   }
 
   /**
@@ -70,22 +70,19 @@ module.exports = class Student {
     return student;
   }
 
-    /**
+  /**
    * Helper method: Get student by ID
    * @param {string} studentId - Student ID
    * @returns {Object|null} Student object or null if not found
    */
-  async getStudentByStudentId(studentId, ) {
-    if (!studentId ) {
+  async getStudentByStudentId(studentId) {
+    if (!studentId) {
       console.error("Student ID is required");
       return null;
     }
-    const student = await this.Student.findById(studentId );
+    const student = await this.Student.findById(studentId);
     return student;
   }
-
-
-
 
   /**
    * Helper method: Generate unique registration number
@@ -128,6 +125,7 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitCreate - Rate limiting for create endpoints
    * @param {string} firstName - Student first name (required)
    * @param {string} lastName - Student last name (required)
    * @param {string} email - Student email (required, unique)
@@ -142,6 +140,7 @@ module.exports = class Student {
   async createStudent({
     __authenticate,
     __authorize,
+    __rateLimitCreate,
     firstName,
     lastName,
     email,
@@ -173,7 +172,8 @@ module.exports = class Student {
       }
 
       // Generate unique registration number
-      const registrationNumber = await this.generateRegistrationNumber(schoolId);
+      const registrationNumber =
+        await this.generateRegistrationNumber(schoolId);
 
       const studentData = {
         ...validation.data,
@@ -207,6 +207,7 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   *    * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __query - Query parameters from URL
    * @param {number} __query.page - Page number (default: 1)
    * @param {number} __query.size - Items per page (default: 10)
@@ -215,7 +216,12 @@ module.exports = class Student {
    * @returns {Object} Object containing students array and pagination metadata
    * @throws {404} If school not found for admin
    */
-  async getAllStudents({ __authenticate, __authorize, __query }) {
+  async getAllStudents({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __query,
+  }) {
     try {
       const schoolId = await this.getSchoolIdFromAdmin(__authenticate);
       if (!schoolId) {
@@ -277,14 +283,14 @@ module.exports = class Student {
     }
   }
 
-
-    /**
+  /**
    * Get all active students for the admin's school with pagination
    *
    * @route GET /api/student/getSchoolStudents?page=1&size=10&status=ACTIVE&search=keyword
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   *    * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __query - Query parameters from URL
    * @param {number} __query.page - Page number (default: 1)
    * @param {number} __query.size - Items per page (default: 10)
@@ -293,13 +299,19 @@ module.exports = class Student {
    * @returns {Object} Object containing students array and pagination metadata
    * @throws {404} If school not found for admin
    */
-  async getSchoolStudents({ __authenticate, __authorize, __query, __params }) {
+  async getSchoolStudents({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __query,
+    __params,
+  }) {
     try {
-        const school = await this.managers.school.getSchoolById(__params.id);
+      const school = await this.managers.school.getSchoolById(__params.id);
 
-        if (!school) {
-            return errorHandlers.notFoundError('School not found');
-        } 
+      if (!school) {
+        return errorHandlers.notFoundError("School not found");
+      }
 
       const page = parseInt(__query.page) || 1;
       const size = parseInt(__query.size) || 10;
@@ -361,21 +373,25 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN , SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   *    * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @returns {Object} Student object with all details
    * @throws {400} If student ID is missing
    * @throws {404} If student or school not found
    */
-  async getById({ __authenticate, __authorize, __params }) {
+  async getById({ __authenticate, __authorize, __rateLimitGeneral, __params }) {
     try {
       const studentId = __params.id;
       if (!studentId) {
         return errorHandlers.badRequestError("Student ID is required");
       }
 
-
-      const student = await this.getStudentByIdWithRoleCheck(studentId, __authenticate, __authorize );
+      const student = await this.getStudentByIdWithRoleCheck(
+        studentId,
+        __authenticate,
+        __authorize,
+      );
       if (!student) {
         return errorHandlers.notFoundError("Student not found");
       }
@@ -395,6 +411,7 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN , SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @param {string} firstName - Updated first name (optional)
@@ -411,6 +428,7 @@ module.exports = class Student {
   async updateStudent({
     __authenticate,
     __authorize,
+    __rateLimitGeneral,
     __params,
     firstName,
     lastName,
@@ -440,8 +458,11 @@ module.exports = class Student {
         return errorHandlers.validationError(validation);
       }
 
-      
-      const student = await this.getStudentByIdWithRoleCheck(studentId, __authenticate, __authorize );
+      const student = await this.getStudentByIdWithRoleCheck(
+        studentId,
+        __authenticate,
+        __authorize,
+      );
       if (!student) {
         return errorHandlers.notFoundError("Student not found");
       }
@@ -462,7 +483,10 @@ module.exports = class Student {
         return errorHandlers.notFoundError("Student not found");
       }
 
-      return successHandlers.updated(updatedStudent, "Student updated successfully");
+      return successHandlers.updated(
+        updatedStudent,
+        "Student updated successfully",
+      );
     } catch (error) {
       if (error.code === 11000) {
         const field = Object.keys(error.keyPattern)[0];
@@ -485,13 +509,19 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN , SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @returns {Object} Updated student object with GRADUATED status
    * @throws {400} If student ID is missing
    * @throws {404} If student or school not found
    */
-  async graduateStudent({ __authenticate, __authorize, __params }) {
+  async graduateStudent({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -504,7 +534,11 @@ module.exports = class Student {
 
       const userId = __authenticate.userId;
 
-    const student = await this.getStudentByIdWithRoleCheck(studentId, __authenticate, __authorize );
+      const student = await this.getStudentByIdWithRoleCheck(
+        studentId,
+        __authenticate,
+        __authorize,
+      );
       if (!student) {
         await session.abortTransaction();
 
@@ -520,12 +554,17 @@ module.exports = class Student {
       // Check if student is inactive (TRANSFERRED, WITHDRAWN, etc.)
       if (student.status !== "ACTIVE") {
         await session.abortTransaction();
-        return errorHandlers.conflictError(`Cannot graduate student with status: ${student.status}`);
+        return errorHandlers.conflictError(
+          `Cannot graduate student with status: ${student.status}`,
+        );
       }
 
-
       // Use lazy access to avoid circular dependency
-      await this.managers.studentClassroom.graduateStudent(studentId, student.schoolId, session);
+      await this.managers.studentClassroom.graduateStudent(
+        studentId,
+        student.schoolId,
+        session,
+      );
 
       // Update student status to graduated
       const updatedStudent = await this.Student.findOneAndUpdate(
@@ -545,7 +584,10 @@ module.exports = class Student {
 
       await session.commitTransaction();
 
-      return successHandlers.updated(updatedStudent, "Student graduated successfully");
+      return successHandlers.updated(
+        updatedStudent,
+        "Student graduated successfully",
+      );
     } catch (error) {
       await session.abortTransaction();
       return errorHandlers.serverError(
@@ -563,31 +605,39 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN , SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @returns {Object} Current classroom details or null if not enrolled
    * @throws {400} If student ID is missing
    * @throws {404} If school not found for admin
    */
-  async getCurrentStudentClassroom({ __authenticate, __authorize, __params }) {
+  async getCurrentStudentClassroom({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const studentId = __params.id;
       if (!studentId) {
         return errorHandlers.badRequestError("Student ID is required");
       }
 
-    const student = await this.getStudentByIdWithRoleCheck(studentId, __authenticate, __authorize );
+      const student = await this.getStudentByIdWithRoleCheck(
+        studentId,
+        __authenticate,
+        __authorize,
+      );
       if (!student) {
-        await session.abortTransaction();
-
         return errorHandlers.notFoundError("Student not found");
       }
 
-
-      const enrollment = await this.managers.studentClassroom.getCurrentEnrollment(
-        studentId,
-        student.schoolId,
-      );
+      const enrollment =
+        await this.managers.studentClassroom.getCurrentEnrollment(
+          studentId,
+          student.schoolId,
+        );
 
       if (!enrollment) {
         return errorHandlers.notFoundError(
@@ -622,20 +672,30 @@ module.exports = class Student {
    * @access SCHOOL_ADMIN, SUPER_ADMIN
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - Student MongoDB ObjectId
    * @returns {Array} Array of enrollment records with classroom details
    * @throws {400} If student ID is missing
    * @throws {404} If school not found for admin
    */
-  async getEnrollmentHistory({ __authenticate, __authorize, __params }) {
+  async getEnrollmentHistory({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const studentId = __params.id;
       if (!studentId) {
         return errorHandlers.badRequestError("Student ID is required");
       }
 
-    const student = await this.getStudentByIdWithRoleCheck(studentId, __authenticate, __authorize );
+      const student = await this.getStudentByIdWithRoleCheck(
+        studentId,
+        __authenticate,
+        __authorize,
+      );
       if (!student) {
         return errorHandlers.notFoundError("Student not found");
       }
@@ -669,8 +729,7 @@ module.exports = class Student {
     }
   }
 
-
-    /**
+  /**
    * Helper method: Get student by ID with role-based access control
    * @param {string} studentId - Student ID
    * @param {Object} __authenticate - Authentication context
@@ -681,24 +740,23 @@ module.exports = class Student {
     let student = null;
 
     if (!studentId) {
-      console.error('Student ID is required');
+      console.error("Student ID is required");
       return null;
     }
 
-      if (__authorize.role === 'SCHOOL_ADMIN') {
-        const schoolId = await this.getSchoolIdFromAdmin(__authenticate);
+    if (__authorize.role === "SCHOOL_ADMIN") {
+      const schoolId = await this.getSchoolIdFromAdmin(__authenticate);
 
-        if (!schoolId) {
-          console.error('School not found for this admin');
-          return null;
-        }
-
-        student = await this.getStudentById(studentId,schoolId);
-      } else {
-        student = await this.getStudentByStudentId(studentId);
+      if (!schoolId) {
+        console.error("School not found for this admin");
+        return null;
       }
 
-      return student;
+      student = await this.getStudentById(studentId, schoolId);
+    } else {
+      student = await this.getStudentByStudentId(studentId);
+    }
 
+    return student;
   }
 };

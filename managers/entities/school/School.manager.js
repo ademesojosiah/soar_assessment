@@ -35,6 +35,7 @@ module.exports = class School {
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitCreate - Rate limiting for create endpoints
    * @param {string} name - School name (required)
    * @param {string} email - School contact email (required, unique)
    * @param {string} phone - School phone number (required)
@@ -49,6 +50,7 @@ module.exports = class School {
   async createSchool({
     __authenticate,
     __authorize,
+    __rateLimitCreate,
     name,
     email,
     phone,
@@ -101,6 +103,7 @@ module.exports = class School {
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __query - Query parameters from URL
    * @param {number} __query.page - Page number (default: 1)
    * @param {number} __query.size - Items per page (default: 10)
@@ -108,7 +111,12 @@ module.exports = class School {
    * @param {string} __query.search - Search by school name, email, or address (optional)
    * @returns {Object} Object containing schools array and pagination metadata
    */
-  async getAllSchools({ __authenticate, __authorize, __query }) {
+  async getAllSchools({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __query,
+  }) {
     try {
       const page = parseInt(__query.page) || 1;
       const size = parseInt(__query.size) || 10;
@@ -167,13 +175,14 @@ module.exports = class School {
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - School MongoDB ObjectId
    * @returns {Object} School object with all details
    * @throws {404} If school not found
    * @throws {400} If school ID is missing
    */
-  async getById({ __authenticate, __authorize, __params }) {
+  async getById({ __authenticate, __authorize, __rateLimitGeneral, __params }) {
     try {
       const schoolId = __params.id;
       if (!schoolId) {
@@ -201,6 +210,7 @@ module.exports = class School {
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - School MongoDB ObjectId
    * @param {string} name - Updated school name (optional)
@@ -218,6 +228,7 @@ module.exports = class School {
   async updateSchool({
     __authenticate,
     __authorize,
+    __rateLimitGeneral,
     __params,
     name,
     email,
@@ -281,13 +292,19 @@ module.exports = class School {
    * @access SUPER_ADMIN only
    * @param {Object} __authenticate - Authentication context with user ID
    * @param {Object} __authorize - Authorization context
+   * @param {Object} __rateLimitGeneral - Rate limiting for general endpoints
    * @param {Object} __params - URL parameters
    * @param {string} __params.id - School MongoDB ObjectId
    * @returns {Object} Updated school object with new status
    * @throws {404} If school not found
    * @throws {400} If school ID is missing
    */
-  async toggleSchoolStatus({ __authenticate, __authorize, __params }) {
+  async toggleSchoolStatus({
+    __authenticate,
+    __authorize,
+    __rateLimitGeneral,
+    __params,
+  }) {
     try {
       const schoolId = __params.id;
       if (!schoolId) {
